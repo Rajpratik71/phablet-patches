@@ -1,0 +1,42 @@
+#!/bin/bash
+
+if [ $# -lt 1 ];then
+    echo "Usage $0 patchdir [project]"
+    exit
+fi
+
+PD=`readlink -f $1`
+
+if [ ! -d $PD ];then
+    echo "Patch directory $PD does not exist"
+    exit
+fi
+
+TARGET=$2
+# NEWBRANCH=` repo info -o|grep merge|cut -f 2 -d:|tr -d ' '|sed 's/android/phablet/'`
+
+# echo Creating branch $NEWBRANCH and applying patches on it
+apply_to_project() {
+    echo ===== Apply patch to $PROJECT
+    # echo $PD/$PROJECT/*.patch
+    for p in $PD/$PROJECT/*.patch;do
+        echo Applying \$p
+        cd $PROJECT ; patch -p1 < $p ; cd -
+        # echo cd $PROJECT \; patch \\\< $p \\\; cd -
+    done
+    echo ===== Apply patch to $PROJECT Done
+}
+
+#Patches in Ubuntu Touch we do not necessarily need to port to AOSP/CodeAurora as they are CM or target specific and not much use for the OEM
+DROPPED="android|vendor"
+
+echo XXXX
+find $PD -name commits |xargs -n 1 dirname  | sed "s;$PD/;;" | grep -v -E "$DROPPED" | while read PROJECT
+do
+    if [ -d $PROJECT ]
+    then
+        apply_to_project
+    else
+        echo Directoy $PROJECT not exists
+    fi
+done
